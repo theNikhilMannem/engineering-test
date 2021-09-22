@@ -9,6 +9,7 @@ import { Person } from "shared/models/person"
 import { useApi } from "shared/hooks/use-api"
 import { StudentListTile } from "staff-app/components/student-list-tile/student-list-tile.component"
 import { ActiveRollOverlay, ActiveRollAction } from "staff-app/components/active-roll-overlay/active-roll-overlay.component"
+import { RolllStateType } from "shared/models/roll"
 
 export const HomeBoardPage: React.FC = () => {
   const [isRollMode, setIsRollMode] = useState(false)
@@ -17,6 +18,7 @@ export const HomeBoardPage: React.FC = () => {
   const [sortUp, setSortUp] = useState(false)
   const [isSearchMode, setIsSearchMode] = useState(false)
   const [searchVal, setSearchVal] = useState('')
+  const[isRollChanged, setIsRollChanged] = useState(false)
 
   useEffect(() => {
     void getStudents()
@@ -74,6 +76,22 @@ export const HomeBoardPage: React.FC = () => {
     }
   }
 
+  const rollChanged = (roll: RolllStateType, student: Person) => {
+    setIsRollChanged(true)
+
+    data?.students.forEach(s => {
+      if (s.id === student.id) {
+        // console.log('roll changed', roll, s.roll)
+        s.roll = roll
+        return
+      }
+    })
+
+    if (isRollChanged) {
+      setIsRollChanged(false)
+    }
+  }
+
   return (
     <>
       <S.PageContainer>
@@ -88,7 +106,7 @@ export const HomeBoardPage: React.FC = () => {
         {loadState === "loaded" && !isSearchMode && data?.students && (
           <>
             {data.students.map((s) => (
-              <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
+              <StudentListTile key={s.id} isRollMode={isRollMode} student={s} onRollChange={rollChanged} />
             ))}
           </>
         )}
@@ -98,7 +116,7 @@ export const HomeBoardPage: React.FC = () => {
             {
               data.students.filter((s) => s.first_name.toLowerCase().includes(searchVal.toLowerCase()) || s.last_name.toLowerCase().includes(searchVal.toLowerCase()))
                 .map(s => (
-                  <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
+                  <StudentListTile key={s.id} isRollMode={isRollMode} student={s} onRollChange={rollChanged} />
                 ))
             }
           </>
@@ -110,7 +128,7 @@ export const HomeBoardPage: React.FC = () => {
           </CenteredContainer>
         )}
       </S.PageContainer>
-      <ActiveRollOverlay isActive={isRollMode} onItemClick={onActiveRollAction} />
+      <ActiveRollOverlay isActive={isRollMode} onItemClick={onActiveRollAction} totalStudents={data?.students ? data.students : []} />
     </>
   )
 }
