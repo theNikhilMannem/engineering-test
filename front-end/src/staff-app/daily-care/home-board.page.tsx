@@ -14,6 +14,10 @@ export const HomeBoardPage: React.FC = () => {
   const [isRollMode, setIsRollMode] = useState(false)
   const [getStudents, data, loadState] = useApi<{ students: Person[] }>({ url: "get-homeboard-students" })
 
+  const [sortUp, setSortUp] = useState(false)
+  const [isSearchMode, setIsSearchMode] = useState(false)
+  const [searchVal, setSearchVal] = useState('')
+
   useEffect(() => {
     void getStudents()
   }, [getStudents])
@@ -22,6 +26,46 @@ export const HomeBoardPage: React.FC = () => {
     if (action === "roll") {
       setIsRollMode(true)
     }
+
+    // Sorting by First and Last names
+    else if (action === "sort") {
+      // console.log("searchMode is", isSearchMode)
+      const selectedOption = (document.getElementById("sortBy") as HTMLSelectElement).selectedOptions[0].value
+
+      if (selectedOption === "byFirstName") {
+        if (sortUp) {
+          data?.students.sort((a, b) => a.first_name > b.first_name ? -1 : 1)
+          setSortUp(false)
+        }
+        else {
+          data?.students.sort((a, b) => a.first_name > b.first_name ? 1 : -1)
+          setSortUp(true)
+        }
+      }
+      else if (selectedOption === "byLastName") {
+        if (sortUp) {
+          data?.students.sort((a, b) => a.last_name > b.last_name ? -1 : 1)
+          setSortUp(false)
+        }
+        else {
+          data?.students.sort((a, b) => a.last_name > b.last_name ? 1 : -1)
+          setSortUp(true)
+        }
+      }
+
+      // console.log(data?.students)
+    }
+  }
+
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchVal(e.currentTarget.value)
+
+    if (!e.currentTarget.value) {
+      setIsSearchMode(false)
+      return
+    }
+    
+    setIsSearchMode(true)
   }
 
   const onActiveRollAction = (action: ActiveRollAction) => {
@@ -33,7 +77,7 @@ export const HomeBoardPage: React.FC = () => {
   return (
     <>
       <S.PageContainer>
-        <Toolbar onItemClick={onToolbarAction} />
+        <Toolbar onItemClick={onToolbarAction} inputHandle={handleInput} />
 
         {loadState === "loading" && (
           <CenteredContainer>
@@ -41,11 +85,22 @@ export const HomeBoardPage: React.FC = () => {
           </CenteredContainer>
         )}
 
-        {loadState === "loaded" && data?.students && (
+        {loadState === "loaded" && !isSearchMode && data?.students && (
           <>
             {data.students.map((s) => (
               <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
             ))}
+          </>
+        )}
+        
+        {loadState === "loaded" && isSearchMode && data?.students && (
+          <>
+            {
+              data.students.filter((s) => s.first_name.toLowerCase().includes(searchVal.toLowerCase()) || s.last_name.toLowerCase().includes(searchVal.toLowerCase()))
+                .map(s => (
+                  <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
+                ))
+            }
           </>
         )}
 
@@ -63,13 +118,23 @@ export const HomeBoardPage: React.FC = () => {
 type ToolbarAction = "roll" | "sort"
 interface ToolbarProps {
   onItemClick: (action: ToolbarAction, value?: string) => void
+  inputHandle: (action: React.ChangeEvent<HTMLInputElement>, value?: string) => void
 }
 const Toolbar: React.FC<ToolbarProps> = (props) => {
-  const { onItemClick } = props
+  const { onItemClick, inputHandle } = props
+
   return (
     <S.ToolbarContainer>
-      <div onClick={() => onItemClick("sort")}>First Name</div>
-      <div>Search</div>
+      <div>
+        <select id="sortBy">
+          <option value="byFirstName">By First Name</option>
+          <option value="byLastName">By Last Name</option>
+        </select>
+        <S.Button onClick={() => onItemClick("sort")}> [SORT] </S.Button>
+      </div>
+      <div>
+        <input id="searchSpace" type="text" placeholder="Search" onInput={inputHandle} />
+      </div>
       <S.Button onClick={() => onItemClick("roll")}>Start Roll</S.Button>
     </S.ToolbarContainer>
   )
