@@ -24,6 +24,8 @@ export const HomeBoardPage: React.FC = () => {
   const [isFilterOn , setIsFilterOn] = useState(false)
   const [filterRoll, setFilterRoll] = useState<ItemType>()
 
+  const [saveRoll] = useApi({ url: "save-roll" })
+
   useEffect(() => {
     void getStudents()
   }, [getStudents])
@@ -87,6 +89,10 @@ export const HomeBoardPage: React.FC = () => {
         setIsFilterOn(true)
       }
       setFilterRoll(roll)
+    }
+
+    if (action === "save") {
+      saveRoll({ student_roll_states: data?.students.map(s => ({ student_id: s.id, roll_state: s.roll === undefined ? "unmark" : s.roll })) })
     }
   }
 
