@@ -4,11 +4,12 @@ import Button from "@material-ui/core/Button"
 import { BorderRadius, Spacing } from "shared/styles/styles"
 import { RollStateList } from "staff-app/components/roll-state/roll-state-list.component"
 import { Person } from "shared/models/person"
+import { RolllStateType } from "shared/models/roll"
 
 export type ActiveRollAction = "filter" | "exit"
 interface Props {
   isActive: boolean
-  onItemClick: (action: ActiveRollAction, value?: string) => void
+  onItemClick: (action: ActiveRollAction, value?: ItemType) => void
   totalStudents: Person[]
 }
 
@@ -27,6 +28,7 @@ export const ActiveRollOverlay: React.FC<Props> = (props) => {
               { type: "late", count: totalStudents.filter(s => s.roll === "late").length },
               { type: "absent", count: totalStudents.filter(s => s.roll === "absent").length },
             ]}
+            onItemClick={type => onItemClick('filter', type)}
           />
           <div style={{ marginTop: Spacing.u6 }}>
             <Button color="inherit" onClick={() => onItemClick("exit")}>
@@ -64,3 +66,5 @@ const S = {
     padding: ${Spacing.u4};
   `,
 }
+
+type ItemType = RolllStateType | "all"

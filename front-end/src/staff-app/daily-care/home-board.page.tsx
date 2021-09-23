@@ -10,6 +10,8 @@ import { useApi } from "shared/hooks/use-api"
 import { StudentListTile } from "staff-app/components/student-list-tile/student-list-tile.component"
 import { ActiveRollOverlay, ActiveRollAction } from "staff-app/components/active-roll-overlay/active-roll-overlay.component"
 import { RolllStateType } from "shared/models/roll"
+import sort_icon from 'assets/images/sort_alpha.png'
+import sort_rev_icon from 'assets/images/sort_rev_alpha.png'
 
 export const HomeBoardPage: React.FC = () => {
   const [isRollMode, setIsRollMode] = useState(false)
@@ -18,7 +20,9 @@ export const HomeBoardPage: React.FC = () => {
   const [sortUp, setSortUp] = useState(false)
   const [isSearchMode, setIsSearchMode] = useState(false)
   const [searchVal, setSearchVal] = useState('')
-  const[isRollChanged, setIsRollChanged] = useState(false)
+  const [isRollChanged, setIsRollChanged] = useState(false)
+  const [isFilterOn , setIsFilterOn] = useState(false)
+  const [filterRoll, setFilterRoll] = useState<ItemType>()
 
   useEffect(() => {
     void getStudents()
@@ -70,9 +74,19 @@ export const HomeBoardPage: React.FC = () => {
     setIsSearchMode(true)
   }
 
-  const onActiveRollAction = (action: ActiveRollAction) => {
+  type ItemType = RolllStateType | "all"
+
+  const onActiveRollAction = (action: ActiveRollAction, roll?: ItemType) => {
     if (action === "exit") {
       setIsRollMode(false)
+      setIsFilterOn(false)
+    }
+
+    if (action === "filter") {
+      if (!isFilterOn) {
+        setIsFilterOn(true)
+      }
+      setFilterRoll(roll)
     }
   }
 
@@ -95,7 +109,7 @@ export const HomeBoardPage: React.FC = () => {
   return (
     <>
       <S.PageContainer>
-        <Toolbar onItemClick={onToolbarAction} inputHandle={handleInput} />
+        <Toolbar onItemClick={onToolbarAction} inputHandle={handleInput} sortUp={sortUp} />
 
         {loadState === "loading" && (
           <CenteredContainer>
@@ -103,7 +117,7 @@ export const HomeBoardPage: React.FC = () => {
           </CenteredContainer>
         )}
 
-        {loadState === "loaded" && !isSearchMode && data?.students && (
+        {loadState === "loaded" && !isSearchMode && !isFilterOn && data?.students && (
           <>
             {data.students.map((s) => (
               <StudentListTile key={s.id} isRollMode={isRollMode} student={s} onRollChange={rollChanged} />
@@ -116,6 +130,22 @@ export const HomeBoardPage: React.FC = () => {
             {
               data.students.filter((s) => s.first_name.toLowerCase().includes(searchVal.toLowerCase()) || s.last_name.toLowerCase().includes(searchVal.toLowerCase()))
                 .map(s => (
+                  <StudentListTile key={s.id} isRollMode={isRollMode} student={s} onRollChange={rollChanged} />
+                ))
+            }
+          </>
+        )}
+
+        {loadState === "loaded" && isFilterOn && isRollMode && data?.students && (
+          <>
+            {
+              filterRoll === "all" ?
+                data.students.map((s) => (
+                  <StudentListTile key={s.id} isRollMode={isRollMode} student={s} onRollChange={rollChanged} />
+                ))
+                :
+                data.students.filter(s => s.roll === filterRoll)
+                  .map((s) => (
                   <StudentListTile key={s.id} isRollMode={isRollMode} student={s} onRollChange={rollChanged} />
                 ))
             }
@@ -137,9 +167,10 @@ type ToolbarAction = "roll" | "sort"
 interface ToolbarProps {
   onItemClick: (action: ToolbarAction, value?: string) => void
   inputHandle: (action: React.ChangeEvent<HTMLInputElement>, value?: string) => void
+  sortUp: boolean
 }
 const Toolbar: React.FC<ToolbarProps> = (props) => {
-  const { onItemClick, inputHandle } = props
+  const { onItemClick, inputHandle, sortUp } = props
 
   return (
     <S.ToolbarContainer>
@@ -148,7 +179,10 @@ const Toolbar: React.FC<ToolbarProps> = (props) => {
           <option value="byFirstName">By First Name</option>
           <option value="byLastName">By Last Name</option>
         </select>
-        <S.Button onClick={() => onItemClick("sort")}> [SORT] </S.Button>
+        <S.Button onClick={() => onItemClick("sort")}>
+          { !sortUp && <img src={sort_icon} alt="sort_alpha icon" style={{ width: '1em', height: '1em', background: '#fff', padding: '.5em', borderRadius: '.5em', boxShadow: '.2em -.2em gray' }} /> }
+          { sortUp && <img src={sort_rev_icon} alt="sort_rev_alpha icon" style={{ width: '1em', height: '1em', background: '#fff', padding: '.5em', borderRadius: '.5em', boxShadow: '.2em -.2em gray' }} /> }
+        </S.Button>
       </div>
       <div>
         <input id="searchSpace" type="text" placeholder="Search" onInput={inputHandle} />
